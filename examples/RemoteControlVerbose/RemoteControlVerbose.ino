@@ -72,35 +72,6 @@ int runCommand() {
   case GET_BAUDRATE:
     Serial.println(BAUDRATE);
     break;
-  case ANALOG_READ:
-    Serial.println(analogRead(arg1));
-    break;
-  case DIGITAL_READ:
-    Serial.println(digitalRead(arg1));
-    break;
-  case ANALOG_WRITE:
-    analogWrite(arg1
-, arg2);
-    Serial.println("OK");
-    break;
-  case DIGITAL_WRITE:
-    if (arg2 == 0) digitalWrite(arg1, LOW);
-    else if (arg2 == 1) digitalWrite(arg1, HIGH);
-    Serial.println("OK");
-    break;
-  case PIN_MODE:
-    if (arg2 == 0) pinMode(arg1, INPUT);
-    else if (arg2 == 1) pinMode(arg1, OUTPUT);
-    Serial.println("OK");
-    break;
-  case SERVO_WRITE:
-    //servos[arg1].write(arg2);
-    Serial.println("NOT SUPPORTED");
-    break;
-  case SERVO_READ:
-    //Serial.println(servos[arg1].read());
-    Serial.println("NOT SUPPORTED");
-    break;
    case ARM_TEST:   
     test = test == 0? 1:0;
     Serial.println("OK");
@@ -110,27 +81,27 @@ int runCommand() {
     Serial.println("OK");
     break;
   case ARM_ALERT:
-    if(!digitalRead(BTN_D7)) uarm.alert(1, 20, 0);
+    uarm.alert(1, 20, 0);
     Serial.println("OK");
     break;
-  case ARM_POSITION:
+  case ARM_SET_POSITION:
     while ((str = strtok_r(p, ":", &p)) != '\0') {
        arm_args[i] = atoi(str);
        i++;
     }
-    //setPIDParams(pid_args[0], pid_args[1], pid_args[2], pid_args[3], PID_RATE);
     // uarm.setPosition(stretchTemp, heightTemp, rotationTemp, handRotTemp);
     uarm.setPosition(arm_args[0], arm_args[1], arm_args[2], arm_args[3]);
-    /* pump action, Valve Stop. */
-    if(arm_args[4] & CATCH)   uarm.gripperCatch();
+    Serial.println("OK");
+    break;
+  case ARM_HOLD:
+        /* pump action, Valve Stop. */
+    if(arg1 & CATCH)   uarm.gripperCatch();
     /* pump stop, Valve action.
        Note: The air relief valve can not work for a long time,
        should be less than ten minutes. */
-    if(arm_args[4] & RELEASE) uarm.gripperRelease();
-
+    if(arg1 & RELEASE) uarm.gripperRelease();
     Serial.println("OK");
     break;
-
   default:
     Serial.println("Invalid Command");
     break;
