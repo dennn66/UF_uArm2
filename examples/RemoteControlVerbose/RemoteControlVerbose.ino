@@ -18,12 +18,12 @@
 #include "commands.h"
 
 /* Serial port baud rate */
-#define BAUDRATE     9600
-//#define BAUDRATE     115200
+//#define BAUDRATE     9600
+#define BAUDRATE     115200
 
 
-//#define NO_LIMIT_SWITCH
-//#define PIEZOBUZZER
+#define NO_LIMIT_SWITCH
+#define PIEZOBUZZER
 
 /* Variable initialization */
 // A pair of varibles to help parse serial commands (thanks Fergs)
@@ -46,6 +46,7 @@ long arg2;
 
 UF_uArm uarm;           // initialize the uArm library 
 
+int test = 0;
 
 /* Clear the current command parameters */
 void resetCommand() {
@@ -101,11 +102,8 @@ int runCommand() {
     Serial.println("NOT SUPPORTED");
     break;
    case ARM_TEST:   
+    test = test == 0? 1:0;
     Serial.println("OK");
-    while(digitalRead(BTN_D7)){
-      motion();
-      motionReturn();
-    } 
     break;
   case ARM_CALIBRATION:
     uarm.manual_calibration(arg1, arg2);
@@ -191,7 +189,10 @@ void loop()
       }
     }
   }
-
+    if(test){
+      motion();
+      motionReturn();
+    } 
   /* delay release valve, this function must be in the main loop */
   uarm.gripperDetach();  
 } 
@@ -199,48 +200,48 @@ void loop()
 
 void motion()
 {
-  uarm.setPosition(60, 80, 0, 0);    // stretch out
-  delay(400);
-  uarm.setPosition(60, 0, 0, 0);  // down
-  delay(400);
-  uarm.gripperCatch();               // catch
-  delay(400);
-  uarm.setPosition(60, 80, 0, 0);    // up
-  delay(400);
-  uarm.setPosition(60, 80, 35, 0);   // rotate
-  delay(400);
-  uarm.setPosition(60, 0, 35, 0); // down
-  delay(400);
-  uarm.gripperRelease();             // release
-  delay(100);
-  uarm.setPosition(60, 80, 35, 0);   // up
-  delay(400);
-  uarm.setPosition(0, 80, 0, 0);      // original position
-  delay(400);
-  uarm.gripperDirectDetach();        // direct detach 
-  delay(500);
+  if(test)uarm.setPosition(60, 80, 0, 0);    // stretch out
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 0, 0);  // down
+  if(test)delay(400);
+  if(test)uarm.gripperCatch();               // catch
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 0, 0);    // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 35, 0);   // rotate
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 35, 0); // down
+  if(test)delay(400);
+  if(test)uarm.gripperRelease();             // release
+  if(test)delay(100);
+  if(test)uarm.setPosition(60, 80, 35, 0);   // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(0, 80, 0, 0);      // original position
+  if(test)delay(400);
+  if(test)uarm.gripperDirectDetach();        // direct detach 
+  if(test)delay(500);
 }
 
 void motionReturn()
 {
-  uarm.setPosition(60, 80, 35, 0);    // stretch out
-  delay(400);
-  uarm.setPosition(60, 0, 35, 0);  // down
-  delay(400);
-  uarm.gripperCatch();                // catch
-  delay(400);
-  uarm.setPosition(60, 80, 35, 0);    // up
-  delay(400);
-  uarm.setPosition(60, 80, 0, 0);     // rotate
-  delay(400);
-  uarm.setPosition(60, 0, 0, 0);   // down
-  delay(400);
-  uarm.gripperRelease();              // release
-  delay(100);
-  uarm.setPosition(60, 80, 0, 0);     // up
-  delay(400);
-  uarm.setPosition(0, 80, 0, 0);       // original position
-  delay(400);
-  uarm.gripperDirectDetach();         // direct detach 
-  delay(500);
+  if(test)uarm.setPosition(60, 80, 35, 0);    // stretch out
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 35, 0);  // down
+  if(test)delay(400);
+  if(test)uarm.gripperCatch();                // catch
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 35, 0);    // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 0, 0);     // rotate
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 0, 0);   // down
+  if(test)delay(400);
+  if(test)uarm.gripperRelease();              // release
+  if(test)delay(100);
+  if(test)uarm.setPosition(60, 80, 0, 0);     // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(0, 80, 0, 0);       // original position
+  if(test)delay(400);
+  if(test)uarm.gripperDirectDetach();         // direct detach 
+  if(test)delay(500);
 }
