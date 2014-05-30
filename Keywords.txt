@@ -17,6 +17,7 @@ calibration	KEYWORD2
 manual_calibration	KEYWORD2
 readAngle	KEYWORD2
 setPosition	KEYWORD2
+getPosition	KEYWORD2
 gripperCatch	KEYWORD2
 gripperRelease	KEYWORD2
 gripperDetach	KEYWORD2

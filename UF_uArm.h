@@ -81,6 +81,7 @@ public:
     void detachServo(char _servoNum);
 	void sendData(byte _dataAdd, int _dataIn); //
 	void alert(int _times, int _runTime, int _stopTime);
+	int getPosition(int _positionNum);    // 
 
 private:
 	/*******************  Servo offset  *******************/

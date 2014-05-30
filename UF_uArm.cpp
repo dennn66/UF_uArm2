@@ -149,6 +149,7 @@ void UF_uArm::manual_calibration(long int initPosL, long int initPosR)
 
 void UF_uArm::setPosition(double _stretch, double _height, int _armRot, int _handRot)
 {
+
 	_armRot = -_armRot;
 
 #ifndef NO_LIMIT_SWITCH
@@ -160,6 +161,12 @@ void UF_uArm::setPosition(double _stretch, double _height, int _armRot, int _han
 	_height  = constrain(_height,  ARM_HEIGHT_MIN,    ARM_HEIGHT_MAX);
 	_armRot  = constrain(_armRot,  ARM_ROTATION_MIN,  ARM_ROTATION_MAX) + 90;		// +90, change -90~90 to 0~180
 	_handRot = constrain(_handRot, HAND_ROTATION_MIN, HAND_ROTATION_MAX) + 90;	// +90, change -90~90 to 0~180
+
+	height     = _height;
+	stretch    = _stretch;
+	rotation   = _armRot;
+	handRot    = _handRot;
+
 	// angle calculation
 	double stretch2height2 = _stretch * _stretch + _height * _height;              //
 	double angleA = (acos( (ARM_A2B2 - stretch2height2) / ARM_2AB )) * RAD_TO_DEG; // angle between the upper and the lower
@@ -180,6 +187,31 @@ void UF_uArm::setPosition(double _stretch, double _height, int _armRot, int _han
 	servoHandRot.write(_handRot);
 	heightLst = _height;
 }
+
+
+int UF_uArm::getPosition(int _positionNum){
+	switch(_positionNum)
+	{
+		case 0:
+			return stretch-55;
+			break;
+		case 1:
+			return height;
+			break;
+		case 2:
+			return rotation-90;
+			break;
+		case 3:
+			return handRot-90;
+			break;
+		case 4:
+			return gripperRst ? 1:0;
+			break;
+		default: return 0; 
+			break;
+	}
+return 0;
+}    // 
 
 int UF_uArm::readAngle(char _servoNum)
 {
@@ -304,7 +336,7 @@ void UF_uArm::alert(int _times, int _runTime, int _stopTime)
 {
 	for(int _ct=0; _ct < _times; _ct++)
 	{
-#ifdef PIEZOBUZZER
+#ifndef PIEZOBUZZER
         delay(_stopTime);
         analogWrite(BUZZER, 20);      // Almost any value can be used except 0 and 255
         delay(_runTime);

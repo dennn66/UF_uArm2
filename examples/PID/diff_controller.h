@@ -146,10 +146,18 @@ void updatePID() {
    }
   /* Set the motor position accordingly */
 
-   uarm.setPosition(PID[0].encoder+PID[0].output,
-                    PID[1].encoder+PID[1].output,
-                    PID[2].encoder+PID[2].output,
-                    PID[3].encoder+PID[3].output);
+//   uarm.setPosition(PID[0].encoder+PID[0].output,
+//                    PID[1].encoder+PID[1].output,
+//                    PID[2].encoder+PID[2].output,
+//                    PID[3].encoder+PID[3].output);
+    Serial.print("PID ");
+    Serial.print(PID[0].encoder+PID[0].output);
+    Serial.print(":");
+    Serial.print(PID[1].encoder+PID[1].output);
+    Serial.print(":");
+    Serial.print(PID[2].encoder+PID[2].output);
+    Serial.print(":");
+    Serial.println(PID[3].encoder+PID[3].output);
 }
 
 /* Set PID parameters */

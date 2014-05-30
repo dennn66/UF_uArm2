@@ -18,14 +18,14 @@
 #include "commands.h"
 
 /* Serial port baud rate */
-#define BAUDRATE     9600
-//#define BAUDRATE     115200
+//#define BAUDRATE     9600
+#define BAUDRATE     115200
 
-//#define DEBUG
-#undef DEBUG
+#define DEBUG
+//#undef DEBUG
 
-#define WATCHDOG
-//#undef WATCHDOG
+//#define WATCHDOG
+#undef WATCHDOG
 
 #ifdef WATCHDOG
   #include <avr/wdt.h>
@@ -37,14 +37,14 @@ UF_uArm uarm;           // initialize the uArm library
 #define POSITION_PID
 //#define VELOCITY_PID
 int readEncoder(int servo);
-#define MAX_PWM 0
+#define MAX_PWM 5
 #define MIN_PWM 0
 
 /* PID parameters and functions */
 #include "diff_controller.h"
 
 /* Estimated gripper sate */
-int tagetGripperState = CATCH;
+int targetGripperState = CATCH;
 
 /* Initial PID Parameters */
 const int INIT_KP = 1;
@@ -61,8 +61,8 @@ const int PID_INTERVAL = 1000 / PID_RATE;
 /* Track the next time we make a PID calculation */
 unsigned long nextPID = PID_INTERVAL;
 
-//#define NO_LIMIT_SWITCH
-//#define PIEZOBUZZER
+#define NO_LIMIT_SWITCH
+#define PIEZOBUZZER
 
 /* Variable initialization */
 // A pair of varibles to help parse serial commands (thanks Fergs)
@@ -83,6 +83,7 @@ char argv2[16];
 long arg1;
 long arg2;
 
+int test = 0;
 
 
 /* Clear the current command parameters */
@@ -129,7 +130,7 @@ int runCommand() {
     Serial.println("OK");
     break;
   case ARM_ALERT:
-    if(!digitalRead(BTN_D7)) uarm.alert(1, 20, 0);
+    uarm.alert(1, 200, 0);
     Serial.println("OK");
     break;
   case ARM_SET_POSITION:
@@ -137,17 +138,28 @@ int runCommand() {
        PID[i].targetPosition = atoi(str);
        i++;
     }
+    uarm.setPosition(PID[0].targetPosition,
+                    PID[1].targetPosition,
+                    PID[2].targetPosition,
+                    PID[3].targetPosition);
     Serial.println("OK");
     break;
   case ARM_HOLD:
-    tagetGripperState = arg1;
+    targetGripperState = arg1;
 
     Serial.println("OK");
     break;
   case ARM_GET_POSITION:
-    Serial.println("0:0:0:0:0");
+    Serial.print(uarm.getPosition(0));
+    Serial.print(" ");
+    Serial.print(uarm.getPosition(1));
+    Serial.print(" ");
+    Serial.print(uarm.getPosition(2));
+    Serial.print(" ");
+    Serial.print(uarm.getPosition(3));
+    Serial.print(" ");
+    Serial.println(uarm.getPosition(4));
     break;
-
   default:
     Serial.println("Invalid Command");
     break;
@@ -227,13 +239,18 @@ void loop()
     nextPID = millis() + PID_INTERVAL;
     updatePID();
   }
+  
+  if(test&!moving){
+    motion();
+    motionReturn();
+  } 
   if(!moving){
     /* pump action, Valve Stop. */
-    if(tagetGripperState & CATCH)   uarm.gripperCatch();
+    if(targetGripperState & CATCH)   uarm.gripperCatch();
     /* pump stop, Valve action.
        Note: The air relief valve can not work for a long time,
        should be less than ten minutes. */
-    if(tagetGripperState & RELEASE) uarm.gripperRelease();
+    if(targetGripperState & RELEASE) uarm.gripperRelease();
   } 
   /* delay release valve, this function must be in the main loop */
   uarm.gripperDetach();  
@@ -242,52 +259,51 @@ void loop()
 
 void motion()
 {
-  uarm.setPosition(60, 80, 0, 0);    // stretch out
-  delay(400);
-  uarm.setPosition(60, 0, 0, 0);  // down
-  delay(400);
-  uarm.gripperCatch();               // catch
-  delay(400);
-  uarm.setPosition(60, 80, 0, 0);    // up
-  delay(400);
-  uarm.setPosition(60, 80, 35, 0);   // rotate
-  delay(400);
-  uarm.setPosition(60, 0, 35, 0); // down
-  delay(400);
-  uarm.gripperRelease();             // release
-  delay(100);
-  uarm.setPosition(60, 80, 35, 0);   // up
-  delay(400);
-  uarm.setPosition(0, 80, 0, 0);      // original position
-  delay(400);
-  uarm.gripperDirectDetach();        // direct detach 
-  delay(500);
+  if(test)uarm.setPosition(60, 80, 0, 0);    // stretch out
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 0, 0);  // down
+  if(test)delay(400);
+  if(test)uarm.gripperCatch();               // catch
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 0, 0);    // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 35, 0);   // rotate
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 35, 0); // down
+  if(test)delay(400);
+  if(test)uarm.gripperRelease();             // release
+  if(test)delay(100);
+  if(test)uarm.setPosition(60, 80, 35, 0);   // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(0, 80, 0, 0);      // original position
+  if(test)delay(400);
+  if(test)uarm.gripperDirectDetach();        // direct detach 
+  if(test)delay(500);
 }
 
 void motionReturn()
 {
-  uarm.setPosition(60, 80, 35, 0);    // stretch out
-  delay(400);
-  uarm.setPosition(60, 0, 35, 0);  // down
-  delay(400);
-  uarm.gripperCatch();                // catch
-  delay(400);
-  uarm.setPosition(60, 80, 35, 0);    // up
-  delay(400);
-  uarm.setPosition(60, 80, 0, 0);     // rotate
-  delay(400);
-  uarm.setPosition(60, 0, 0, 0);   // down
-  delay(400);
-  uarm.gripperRelease();              // release
-  delay(100);
-  uarm.setPosition(60, 80, 0, 0);     // up
-  delay(400);
-  uarm.setPosition(0, 80, 0, 0);       // original position
-  delay(400);
-  uarm.gripperDirectDetach();         // direct detach 
-  delay(500);
+  if(test)uarm.setPosition(60, 80, 35, 0);    // stretch out
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 35, 0);  // down
+  if(test)delay(400);
+  if(test)uarm.gripperCatch();                // catch
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 35, 0);    // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 80, 0, 0);     // rotate
+  if(test)delay(400);
+  if(test)uarm.setPosition(60, 0, 0, 0);   // down
+  if(test)delay(400);
+  if(test)uarm.gripperRelease();              // release
+  if(test)delay(100);
+  if(test)uarm.setPosition(60, 80, 0, 0);     // up
+  if(test)delay(400);
+  if(test)uarm.setPosition(0, 80, 0, 0);       // original position
+  if(test)delay(400);
+  if(test)uarm.gripperDirectDetach();         // direct detach 
+  if(test)delay(500);
 }
-
-int readEncoder(int servo){
-  return 0;
+int readEncoder(int _positionNum){
+  return uarm.getPosition(_positionNum);
 }
