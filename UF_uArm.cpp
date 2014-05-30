@@ -134,11 +134,27 @@ void UF_uArm::calibration()
     }
 }
 
+void UF_uArm::manual_calibration(long int initPosL, long int initPosR)
+{
+        offsetL = initPosL - INIT_POS_L;
+        offsetR = initPosR - INIT_POS_R;
+            EEPROM.write(0, CALIBRATION_FLAG);  // Added flag to know if offset is done
+            EEPROM.write(1, offsetL);			// offsetL
+            EEPROM.write(2, offsetR);			// offsetR
+            // buzzer alert
+            alert(1, 500, 0);
+            // reset postion
+            init();
+}
+
 void UF_uArm::setPosition(double _stretch, double _height, int _armRot, int _handRot)
 {
 	_armRot = -_armRot;
-	if(!digitalRead(LIMIT_SW) && _height < heightLst) //limit switch protection
-	_height = heightLst;
+
+#ifndef NO_LIMIT_SWITCH
+    if(!digitalRead(LIMIT_SW) && _height < heightLst) //limit switch protection
+    _height = heightLst;
+#endif
 	// input limit
 	_stretch = constrain(_stretch, ARM_STRETCH_MIN,   ARM_STRETCH_MAX) + 55;		// +55, set stretch zero
 	_height  = constrain(_height,  ARM_HEIGHT_MIN,    ARM_HEIGHT_MAX);
@@ -288,9 +304,16 @@ void UF_uArm::alert(int _times, int _runTime, int _stopTime)
 {
 	for(int _ct=0; _ct < _times; _ct++)
 	{
-		delay(_stopTime);
-		digitalWrite(BUZZER, HIGH);
-		delay(_runTime);
-		digitalWrite(BUZZER, LOW);
+#ifdef PIEZOBUZZER
+        delay(_stopTime);
+        analogWrite(BUZZER, 20);      // Almost any value can be used except 0 and 255
+        delay(_runTime);
+        analogWrite(BUZZER, 0);       // 0 turns it off
+#else
+        delay(_stopTime);
+        digitalWrite(BUZZER, HIGH);
+        delay(_runTime);
+        digitalWrite(BUZZER, LOW);
+#endif
 	}
 }

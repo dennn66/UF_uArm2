@@ -67,6 +67,7 @@ public:
 	UF_uArm();
 	void init();    // initialize the uArm position
     void calibration();  //
+    void manual_calibration(long initPosL, long   initPosR);  //
     int readAngle(char _servoNum);
 	void setPosition(double _stretch, double _height, int _armRot, int _handRot);    // 
 	void gripperCatch();    //

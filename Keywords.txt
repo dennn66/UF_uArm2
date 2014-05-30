@@ -14,6 +14,7 @@ UF_uArm	KEYWORD1
 
 init		KEYWORD2
 calibration	KEYWORD2
+manual_calibration	KEYWORD2
 readAngle	KEYWORD2
 setPosition	KEYWORD2
 gripperCatch	KEYWORD2
