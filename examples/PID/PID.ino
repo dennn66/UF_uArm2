@@ -37,8 +37,8 @@ UF_uArm uarm;           // initialize the uArm library
 #define POSITION_PID
 //#define VELOCITY_PID
 int readEncoder(int servo);
-#define MAX_PWM 5
-#define MIN_PWM 0
+#define MAX_PWM 20
+#define MIN_PWM 1
 
 /* PID parameters and functions */
 #include "diff_controller.h"
@@ -61,8 +61,7 @@ const int PID_INTERVAL = 1000 / PID_RATE;
 /* Track the next time we make a PID calculation */
 unsigned long nextPID = PID_INTERVAL;
 
-#define NO_LIMIT_SWITCH
-#define PIEZOBUZZER
+
 
 /* Variable initialization */
 // A pair of varibles to help parse serial commands (thanks Fergs)
@@ -111,11 +110,8 @@ int runCommand() {
     Serial.println(BAUDRATE);
     break;
    case ARM_TEST:   
+    test = 1;
     Serial.println("OK");
-    while(digitalRead(BTN_D7)){
-      motion();
-      motionReturn();
-    } 
     break;
   case UPDATE_PID:
     while ((str = strtok_r(p, ":", &p)) != '\0') {
@@ -138,15 +134,14 @@ int runCommand() {
        PID[i].targetPosition = atoi(str);
        i++;
     }
-    uarm.setPosition(PID[0].targetPosition,
-                    PID[1].targetPosition,
-                    PID[2].targetPosition,
-                    PID[3].targetPosition);
+    //uarm.setPosition(PID[0].targetPosition,
+    //                PID[1].targetPosition,
+    //                PID[2].targetPosition,
+    //                PID[3].targetPosition);
     Serial.println("OK");
     break;
   case ARM_HOLD:
     targetGripperState = arg1;
-
     Serial.println("OK");
     break;
   case ARM_GET_POSITION:
@@ -238,20 +233,28 @@ void loop()
   if (millis() > nextPID) {
     nextPID = millis() + PID_INTERVAL;
     updatePID();
+
+    if(test&1){
+      Serial.println("Test loop");
+      motion();
+      motionReturn();
+    } 
+    if(!moving){
+      /* pump action, Valve Stop. */
+      if(targetGripperState & CATCH) {  
+        uarm.gripperCatch();
+      }
+      /* pump stop, Valve action.
+         Note: The air relief valve can not work for a long time,
+         should be less than ten minutes. */
+      if(targetGripperState & RELEASE){
+        uarm.gripperRelease();
+      }
+    } 
   }
   
-  if(test&!moving){
-    motion();
-    motionReturn();
-  } 
-  if(!moving){
-    /* pump action, Valve Stop. */
-    if(targetGripperState & CATCH)   uarm.gripperCatch();
-    /* pump stop, Valve action.
-       Note: The air relief valve can not work for a long time,
-       should be less than ten minutes. */
-    if(targetGripperState & RELEASE) uarm.gripperRelease();
-  } 
+
+
   /* delay release valve, this function must be in the main loop */
   uarm.gripperDetach();  
 } 

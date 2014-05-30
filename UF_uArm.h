@@ -17,6 +17,9 @@
 #ifndef UF_uArm_h
 #define UF_uArm_h
 
+#define NO_LIMIT_SWITCH
+#define PIEZOBUZZER
+
 /****************  Macro definitions  ****************/
 #define ARM_A                   148    // upper arm
 #define ARM_B                   160    // lower arm

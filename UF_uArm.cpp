@@ -199,13 +199,13 @@ int UF_uArm::getPosition(int _positionNum){
 			return height;
 			break;
 		case 2:
-			return rotation-90;
+			return 90-rotation;
 			break;
 		case 3:
 			return handRot-90;
 			break;
 		case 4:
-			return gripperRst ? 1:0;
+			return gripperRst ? CATCH:RELEASE;
 			break;
 		default: return 0; 
 			break;
@@ -336,7 +336,7 @@ void UF_uArm::alert(int _times, int _runTime, int _stopTime)
 {
 	for(int _ct=0; _ct < _times; _ct++)
 	{
-#ifndef PIEZOBUZZER
+#ifdef PIEZOBUZZER
         delay(_stopTime);
         analogWrite(BUZZER, 20);      // Almost any value can be used except 0 and 255
         delay(_runTime);

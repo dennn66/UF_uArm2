@@ -121,7 +121,7 @@ void doPID(SetPointInfo * p) {
 void updatePID() {
   /* Read the encoders */
   for(int i=0;i<PIDS_NUM;i++) PID[i].encoder = readEncoder(i);
-    
+
   /* If we're not moving there is nothing more to do */
   if (!moving){
     /*
@@ -130,14 +130,14 @@ void updatePID() {
     * Most importantly, keep Encoder and PrevEnc synced; use that as criteria whether we need reset
     */
     for(int i=0;i<PIDS_NUM;i++) if (PID[i].prevEnc != PID[i].encoder) resetPID(i);
-    return;
+    //return;
   }
   
   /* Compute PID update for each motor */
   moving = 0;
   for(int i=0;i<PIDS_NUM;i++){
       if(PID[i].targetPosition != PID[i].encoder ) {
-        PID[i].targetTicksPerFrame = PID[i].targetPosition - PID[i].encoder;
+        PID[i].targetTicksPerFrame = (PID[i].targetPosition - PID[i].encoder)/2;
         moving = 1;
         doPID(&(PID[i]));
       } else {
@@ -146,11 +146,25 @@ void updatePID() {
    }
   /* Set the motor position accordingly */
 
-//   uarm.setPosition(PID[0].encoder+PID[0].output,
-//                    PID[1].encoder+PID[1].output,
-//                    PID[2].encoder+PID[2].output,
-//                    PID[3].encoder+PID[3].output);
-    Serial.print("PID ");
+   uarm.setPosition(PID[0].encoder+PID[0].output,
+                    PID[1].encoder+PID[1].output,
+                    PID[2].encoder+PID[2].output,
+                    PID[3].encoder+PID[3].output);
+#ifdef DEBUG
+  if (moving){
+
+    Serial.print("PID encoders ");
+    for(int i=0;i<PIDS_NUM;i++) {
+      Serial.print(PID[i].encoder); 
+      Serial.print(" ");
+    }
+       Serial.print("PID targets  ");
+    for(int i=0;i<PIDS_NUM;i++) {
+      Serial.print(PID[i].targetPosition); 
+      Serial.print(" ");
+    }
+
+      Serial.print("PID next pos ");
     Serial.print(PID[0].encoder+PID[0].output);
     Serial.print(":");
     Serial.print(PID[1].encoder+PID[1].output);
@@ -158,6 +172,11 @@ void updatePID() {
     Serial.print(PID[2].encoder+PID[2].output);
     Serial.print(":");
     Serial.println(PID[3].encoder+PID[3].output);
+
+
+    delay(100);
+  }
+#endif  
 }
 
 /* Set PID parameters */
