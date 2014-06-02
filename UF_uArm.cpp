@@ -34,6 +34,10 @@ UF_uArm::UF_uArm()
 
 void UF_uArm::init()
 {
+#ifdef DEBUG
+  Serial.println("uArm init");
+#endif
+
     // read offset data
     offsetL = EEPROM.read(1);
     offsetR = EEPROM.read(2);
@@ -52,8 +56,13 @@ void UF_uArm::init()
 	servoRot.attach(SERVO_ROT, D150A_SERVO_MIN_PUL, D150A_SERVO_MAX_PUL);
 	servoHand.attach(SERVO_HAND, D009A_SERVO_MIN_PUL, D009A_SERVO_MAX_PUL);
 	servoHandRot.attach(SERVO_HAND_ROT, D009A_SERVO_MIN_PUL, D009A_SERVO_MAX_PUL);
-	servoHand.write(HAND_ANGLE_OPEN);delay(50);
+	servoR.write(90);
+	servoL.write(90);
+	servoRot.write(90);
+	servoHandRot.write(90);
+	servoHand.write(HAND_ANGLE_OPEN);
 	servoHand.detach();
+	for(int i=0;i<PIDS_NUM;i++) resetPID(i);
 	// initialization postion
 	setPosition(stretch, height, rotation, handRot);
     } else {	// buzzer alert if calibration needed
@@ -493,17 +502,6 @@ void UF_uArm::updatePID() {
   /* Read the encoders */
   for(int i=0;i<PIDS_NUM;i++) PID[i].encoder = getPositionMicroseconds(i);
 
-  /* If we're not moving there is nothing more to do */
-  if (!moving){
-    /*
-    * Reset PIDs, to prevent startup spikes,
-    * see http://brettbeauregard.com/blog/2011/04/improving-the-beginner%E2%80%99s-pid-initialization/
-    * Most importantly, keep Encoder and PrevEnc synced; use that as criteria whether we need reset
-    */
-    for(int i=0;i<PIDS_NUM;i++) if (PID[i].prevEnc != PID[i].encoder) resetPID(i);
-    //return;
-  }
-  
   /* Compute PID update for each motor */
   moving = 0;
   for(int i=0;i<PIDS_NUM;i++){
@@ -511,21 +509,39 @@ void UF_uArm::updatePID() {
         PID[i].targetTicksPerFrame = (PID[i].targetPosition - PID[i].encoder)/2;
         moving = 1;
         doPID(&(PID[i]));
-      } else {
-        PID[i].prevEnc = PID[i].encoder;
+  /* Set the motor position accordingly */
+ 	switch(i)
+	{
+		case 0:
+			servoR.writeMicroseconds(PID[0].encoder+PID[0].output);
+			break;
+		case 1:
+			 servoL.writeMicroseconds(PID[1].encoder+PID[1].output);
+			break;
+		case 2:
+			servoRot.writeMicroseconds(PID[2].encoder+PID[2].output);
+			break;
+		case 3:
+			servoHandRot.writeMicroseconds(PID[3].encoder+PID[3].output);
+			break;
+		case 4:
+			break;
+		default: 
+			break;
+	}
+
+     } else {
+
+    /*
+    * Reset PIDs, to prevent startup spikes,
+    * see http://brettbeauregard.com/blog/2011/04/improving-the-beginner%E2%80%99s-pid-initialization/
+    * Most importantly, keep Encoder and PrevEnc synced; use that as criteria whether we need reset
+    */
+
+        if (PID[i].prevEnc != PID[i].encoder) resetPID(i);
       }
    }
-  /* Set the motor position accordingly */
 
-//   setPosition(PID[0].encoder+PID[0].output,
-//                    PID[1].encoder+PID[1].output,
-//                    PID[2].encoder+PID[2].output,
-//                    PID[3].encoder+PID[3].output);
-
-  servoR.writeMicroseconds(PID[0].encoder+PID[0].output);
-  servoL.writeMicroseconds(PID[1].encoder+PID[1].output);
-  servoRot.writeMicroseconds(PID[2].encoder+PID[2].output);
-  servoHandRot.writeMicroseconds(PID[3].encoder+PID[3].output);
 
 
 #ifdef DEBUG
