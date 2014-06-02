@@ -34,14 +34,8 @@
 UF_uArm uarm;           // initialize the uArm library 
 
 
-#define POSITION_PID
-//#define VELOCITY_PID
-int readEncoder(int servo);
-#define MAX_PWM 20
-#define MIN_PWM 1
 
-/* PID parameters and functions */
-#include "diff_controller.h"
+
 
 /* Estimated gripper sate */
 int targetGripperState = CATCH;
@@ -61,7 +55,28 @@ const int PID_INTERVAL = 1000 / PID_RATE;
 /* Track the next time we make a PID calculation */
 unsigned long nextPID = PID_INTERVAL;
 
-
+int testSequence[][5] = 
+//motion
+  {{70, 80, 0, 0, RELEASE},    // stretch out
+  {70, -85, 0, 0, RELEASE},  // down
+  {70, -85, 0, 0, CATCH},  //catch
+  {70, 80, 0, 0, CATCH},    // up
+  {70, 80, 35, 0, CATCH},   // rotate
+  {70, -85, 35, 0, CATCH}, // down
+  {70, -85, 35, 0, RELEASE}, // release
+  {70, 80, 35, 0,RELEASE},   // up
+  {0, 80, 0, 0,RELEASE},      // original position
+//motionReturn
+  {70, 80, 35, 0, RELEASE},    // stretch out
+  {70, -85, 35, 0, RELEASE},  // down
+  {70, -85, 35, 0, CATCH},   // catch
+  {70, 80, 35, 0,CATCH},    // up
+  {70, 80, 0, 0, CATCH},     // rotate
+  {70, -85, 0, 0, CATCH},   // down
+  {70, -85, 0, 0, CATCH},  // release
+  {70, 80, 0, 0, RELEASE},     // up
+  {0, 80, 0, 0, RELEASE}}     ;  // original position;
+int testState=0;
 
 /* Variable initialization */
 // A pair of varibles to help parse serial commands (thanks Fergs)
@@ -102,6 +117,7 @@ int runCommand() {
   char *p = argv1;
   char *str;
   int pid_args[4];
+  int arm_args[4];
   arg1 = atoi(argv1);
   arg2 = atoi(argv2);
 
@@ -110,7 +126,8 @@ int runCommand() {
     Serial.println(BAUDRATE);
     break;
    case ARM_TEST:   
-    test = 1;
+    testState = 0;
+    test = test==0?1:0;
     Serial.println("OK");
     break;
   case UPDATE_PID:
@@ -118,7 +135,7 @@ int runCommand() {
        pid_args[i] = atoi(str);
        i++;
     }
-    setPIDParams(pid_args[0], pid_args[1], pid_args[2], pid_args[3], PID_RATE);
+    uarm.setPIDParams(pid_args[0], pid_args[1], pid_args[2], pid_args[3], PID_RATE);
     Serial.println("OK");
     break;
   case ARM_CALIBRATION:
@@ -131,17 +148,22 @@ int runCommand() {
     break;
   case ARM_SET_POSITION:
     while ((str = strtok_r(p, ":", &p)) != '\0') {
-       PID[i].targetPosition = atoi(str);
+       arm_args[i] = atoi(str);
        i++;
     }
-    //uarm.setPosition(PID[0].targetPosition,
-    //                PID[1].targetPosition,
-    //                PID[2].targetPosition,
-    //                PID[3].targetPosition);
+    uarm.setPosition(arm_args[0],
+                    arm_args[1],
+                    arm_args[2],
+                    arm_args[3]);
     Serial.println("OK");
     break;
   case ARM_HOLD:
-    targetGripperState = arg1;
+          /* pump action, Valve Stop. */
+    if(arg1 & CATCH) uarm.gripperCatch();
+    /* pump stop, Valve action.
+       Note: The air relief valve can not work for a long time,
+       should be less than ten minutes. */
+    if(arg1 & RELEASE) uarm.gripperRelease();
     Serial.println("OK");
     break;
   case ARM_GET_POSITION:
@@ -169,8 +191,8 @@ void setup()
   while(!Serial);   // wait for serial port to connect. Needed for Leonardo only
 
   //init PID
-  setPIDParams(INIT_KP, INIT_KD, INIT_KI, INIT_KO, PID_RATE);
-  for(int i=0;i<PIDS_NUM;i++) resetPID(i);
+  uarm.setPIDParams(INIT_KP, INIT_KD, INIT_KI, INIT_KO, PID_RATE);
+  for(int i=0;i<PIDS_NUM;i++) uarm.resetPID(i);
 
 #ifdef WATCHDOG
   wdt_reset();
@@ -232,81 +254,29 @@ void loop()
 
   if (millis() > nextPID) {
     nextPID = millis() + PID_INTERVAL;
-    updatePID();
+    uarm.updatePID();
 
-    if(test&1){
-      Serial.println("Test loop");
-      motion();
-      motionReturn();
-    } 
-    if(!moving){
-      /* pump action, Valve Stop. */
-      if(targetGripperState & CATCH) {  
-        uarm.gripperCatch();
-      }
-      /* pump stop, Valve action.
-         Note: The air relief valve can not work for a long time,
-         should be less than ten minutes. */
-      if(targetGripperState & RELEASE){
-        uarm.gripperRelease();
-      }
+    if(test&!uarm.isMoving()){
+          uarm.setPosition(testSequence[testState][0],
+                    testSequence[testState][1],
+                    testSequence[testState][2],
+                    testSequence[testState][3]);
+                   /* pump action, Valve Stop. */
+          if(testSequence[testState][4] & CATCH) {
+            uarm.gripperCatch();
+          } else {
+          /* pump stop, Valve action.
+             Note: The air relief valve can not work for a long time,
+             should be less than ten minutes. */
+             uarm.gripperRelease();
+          }
+          testState++;
+          testState = testState==18?0:testState;
     } 
   }
   
-
-
   /* delay release valve, this function must be in the main loop */
   uarm.gripperDetach();  
 } 
 
 
-void motion()
-{
-  if(test)uarm.setPosition(60, 80, 0, 0);    // stretch out
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 0, 0, 0);  // down
-  if(test)delay(400);
-  if(test)uarm.gripperCatch();               // catch
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 80, 0, 0);    // up
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 80, 35, 0);   // rotate
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 0, 35, 0); // down
-  if(test)delay(400);
-  if(test)uarm.gripperRelease();             // release
-  if(test)delay(100);
-  if(test)uarm.setPosition(60, 80, 35, 0);   // up
-  if(test)delay(400);
-  if(test)uarm.setPosition(0, 80, 0, 0);      // original position
-  if(test)delay(400);
-  if(test)uarm.gripperDirectDetach();        // direct detach 
-  if(test)delay(500);
-}
-
-void motionReturn()
-{
-  if(test)uarm.setPosition(60, 80, 35, 0);    // stretch out
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 0, 35, 0);  // down
-  if(test)delay(400);
-  if(test)uarm.gripperCatch();                // catch
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 80, 35, 0);    // up
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 80, 0, 0);     // rotate
-  if(test)delay(400);
-  if(test)uarm.setPosition(60, 0, 0, 0);   // down
-  if(test)delay(400);
-  if(test)uarm.gripperRelease();              // release
-  if(test)delay(100);
-  if(test)uarm.setPosition(60, 80, 0, 0);     // up
-  if(test)delay(400);
-  if(test)uarm.setPosition(0, 80, 0, 0);       // original position
-  if(test)delay(400);
-  if(test)uarm.gripperDirectDetach();         // direct detach 
-  if(test)delay(500);
-}
-int readEncoder(int _positionNum){
-  return uarm.getPosition(_positionNum);
-}

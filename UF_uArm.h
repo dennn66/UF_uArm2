@@ -17,6 +17,16 @@
 #ifndef UF_uArm_h
 #define UF_uArm_h
 
+//#define DEBUG
+#undef DEBUG
+
+#define POSITION_PID
+#define MAX_DELTA 20
+#define MIN_DELTA 1
+
+/* PID parameters and functions */
+#include "diff_controller.h"
+
 #define NO_LIMIT_SWITCH
 #define PIEZOBUZZER
 
@@ -85,6 +95,12 @@ public:
 	void sendData(byte _dataAdd, int _dataIn); //
 	void alert(int _times, int _runTime, int _stopTime);
 	int getPosition(int _positionNum);    // 
+	void resetPID(int pidnum);
+	void doPID(SetPointInfo * p);
+	void updatePID() ;
+	void setPIDParams(int newKp, int newKd, int newKi, int newKo, int pidRate);
+	int getPositionMicroseconds(int _positionNum);
+    boolean isMoving();
 
 private:
 	/*******************  Servo offset  *******************/
@@ -105,6 +121,23 @@ private:
 	Servo servoRot;
 	Servo servoHand;
 	Servo servoHandRot;
+	
+	/* PID setpoint info For a Servo */
+
+	#define PIDS_NUM 4
+	SetPointInfo      PID[PIDS_NUM];
+
+	/* PID Parameters 
+	* Do not SET these directly here, unless you know what you are doing 
+	* Use setPIDParameters() instead
+	*/
+	int Kp;    
+	int Kd;
+	int Ki;      
+	int Ko; 
+
+	unsigned char moving; // is the arm in motion?
+
 };
 
 #endif
