@@ -13,6 +13,7 @@
 #define ARM_ALERT      'a'
 #define ARM_TEST       't'
 #define ARM_HOLD      'h'
+#define ARM_GET_ANGLE      'd'
 
 #endif
 

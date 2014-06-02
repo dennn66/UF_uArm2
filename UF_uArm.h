@@ -20,7 +20,6 @@
 //#define DEBUG
 #undef DEBUG
 
-#define POSITION_PID
 #define MAX_DELTA 20
 #define MIN_DELTA 1
 
@@ -74,6 +73,13 @@
 #define SERVO_R                 12    //
 #define SERVO_L                 13    //
 
+#define PID_SERVO_R             0    //
+#define PID_SERVO_L             1    //
+#define PID_SERVO_ROT           2    //
+#define PID_SERVO_HAND_ROT      3    //
+#define PID_SERVO_HAND          4     //
+
+
 class UF_uArm
 {
 public:
@@ -99,7 +105,7 @@ public:
 	void doPID(SetPointInfo * p);
 	void updatePID() ;
 	void setPIDParams(int newKp, int newKd, int newKi, int newKo, int pidRate);
-	int getPositionMicroseconds(int _positionNum);
+	int getPositionMicroseconds(int _pidNum);
     boolean isMoving();
 
 private:
@@ -127,10 +133,7 @@ private:
 	#define PIDS_NUM 4
 	SetPointInfo      PID[PIDS_NUM];
 
-	/* PID Parameters 
-	* Do not SET these directly here, unless you know what you are doing 
-	* Use setPIDParameters() instead
-	*/
+	/* PID Parameters */
 	int Kp;    
 	int Kd;
 	int Ki;      

@@ -23,6 +23,9 @@ UF_uArm::UF_uArm()
     lstTime    = 0;
 	delay_loop = 0;
     gripperRst  = true;
+	/* Do not SET these directly here, unless you know what you are doing 
+	* Use setPIDParameters() instead
+	*/
 
 	Kp = 0;    
 	Kd = 0;
@@ -34,10 +37,6 @@ UF_uArm::UF_uArm()
 
 void UF_uArm::init()
 {
-#ifdef DEBUG
-  Serial.println("uArm init");
-#endif
-
     // read offset data
     offsetL = EEPROM.read(1);
     offsetR = EEPROM.read(2);
@@ -167,9 +166,6 @@ void UF_uArm::setPosition(double _stretch, double _height, int _armRot, int _han
 {
 
 	_armRot = -_armRot;
-#ifdef DEBUG
-  Serial.println("Start");
-#endif
 #ifndef NO_LIMIT_SWITCH
     if(!digitalRead(LIMIT_SW) && _height < heightLst) //limit switch protection
     _height = heightLst;
@@ -184,17 +180,6 @@ void UF_uArm::setPosition(double _stretch, double _height, int _armRot, int _han
 	stretch    = _stretch;
 	rotation   = _armRot;
 	handRot    = _handRot;
-#ifdef DEBUG
-  Serial.print("Target pos: height ");
-  Serial.print(height);
-  Serial.print(" stretch ");
-  Serial.print(stretch);
-  Serial.print(" rotation ");
-  Serial.print(rotation);
-  Serial.print(" handRot ");
-  Serial.println(handRot);
-#endif
-
 	// angle calculation
 	double stretch2height2 = _stretch * _stretch + _height * _height;              //
 	double angleA = (acos( (ARM_A2B2 - stretch2height2) / ARM_2AB )) * RAD_TO_DEG; // angle between the upper and the lower
@@ -209,31 +194,11 @@ void UF_uArm::setPosition(double _stretch, double _height, int _armRot, int _han
 	if(angleL<15+offsetL)
 	angleR = constrain(angleR, 70 + offsetR, angleR);			// front down
 	// set servo position
-#ifdef DEBUG
-  Serial.print("Target serv: angleR ");
-  Serial.print(angleR);
-  Serial.print(" angleL ");
-  Serial.print(angleL);
-  Serial.print(" _armRot ");
-  Serial.print(_armRot);
-  Serial.print(" _handRot ");
-  Serial.println(_handRot);
-#endif
+
 	PID[0].targetPosition     = map(angleR, 0, 180, D150A_SERVO_MIN_PUL,  D150A_SERVO_MAX_PUL); 
 	PID[1].targetPosition    = map(angleL, 0, 180, D150A_SERVO_MIN_PUL,  D150A_SERVO_MAX_PUL); 
 	PID[2].targetPosition   = map(_armRot, 0, 180, D150A_SERVO_MIN_PUL,  D150A_SERVO_MAX_PUL);
 	PID[3].targetPosition    = map(_handRot, 0, 180, D009A_SERVO_MIN_PUL,  D009A_SERVO_MAX_PUL);
-
-#ifdef DEBUG
-  Serial.print("Target ms: angleR ");
-  Serial.print(PID[0].targetPosition);
-  Serial.print(" angleL ");
-  Serial.print(PID[1].targetPosition);
-  Serial.print(" _armRot ");
-  Serial.print(PID[2].targetPosition);
-  Serial.print(" _handRot ");
-  Serial.println(PID[3].targetPosition);
-#endif
 
 //	servoR.write(angleR);
 //	servoL.write(angleL);
@@ -269,29 +234,28 @@ int UF_uArm::getPosition(int _positionNum){
 return 0;
 }    // 
 
-int UF_uArm::getPositionMicroseconds(int _positionNum){
+int UF_uArm::getPositionMicroseconds(int _pidNum){
   int positionMS;
-	switch(_positionNum)
+	switch(_pidNum)
 	{
-		case 0:
+		case PID_SERVO_R:
 			positionMS = servoR.readMicroseconds();
 			break;
-		case 1:
+		case PID_SERVO_L:
 			positionMS = servoL.readMicroseconds();
 			break;
-		case 2:
+		case PID_SERVO_ROT:
 			positionMS = servoRot.readMicroseconds();
 			break;
-		case 3:
+		case PID_SERVO_HAND_ROT:
 			positionMS = servoHandRot.readMicroseconds();
 			break;
-		case 4:
+		case PID_SERVO_HAND:
 			positionMS = servoHand.readMicroseconds();
 			break;
 		default: return 0; 
 			break;
 	}
-
 	return positionMS;
 }    // 
 
@@ -512,24 +476,23 @@ void UF_uArm::updatePID() {
   /* Set the motor position accordingly */
  	switch(i)
 	{
-		case 0:
+		case PID_SERVO_R:
 			servoR.writeMicroseconds(PID[0].encoder+PID[0].output);
 			break;
-		case 1:
+		case PID_SERVO_L:
 			 servoL.writeMicroseconds(PID[1].encoder+PID[1].output);
 			break;
-		case 2:
+		case PID_SERVO_ROT:
 			servoRot.writeMicroseconds(PID[2].encoder+PID[2].output);
 			break;
-		case 3:
+		case PID_SERVO_HAND_ROT:
 			servoHandRot.writeMicroseconds(PID[3].encoder+PID[3].output);
 			break;
-		case 4:
+		case PID_SERVO_HAND:
 			break;
 		default: 
 			break;
 	}
-
      } else {
 
     /*
@@ -541,36 +504,6 @@ void UF_uArm::updatePID() {
         if (PID[i].prevEnc != PID[i].encoder) resetPID(i);
       }
    }
-
-
-
-#ifdef DEBUG
-  if (moving){
-
-    Serial.print("PID encoders ");
-    for(int i=0;i<PIDS_NUM;i++) {
-      Serial.print(PID[i].encoder); 
-      Serial.print(" ");
-    }
-       Serial.print("PID targets  ");
-    for(int i=0;i<PIDS_NUM;i++) {
-      Serial.print(PID[i].targetPosition); 
-      Serial.print(" ");
-    }
-
-      Serial.print("PID next pos ");
-    Serial.print(PID[0].encoder+PID[0].output);
-    Serial.print(":");
-    Serial.print(PID[1].encoder+PID[1].output);
-    Serial.print(":");
-    Serial.print(PID[2].encoder+PID[2].output);
-    Serial.print(":");
-    Serial.println(PID[3].encoder+PID[3].output);
-
-
-    delay(100);
-  }
-#endif  
 }
 
 /* Set PID parameters */

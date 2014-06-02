@@ -34,12 +34,6 @@
 UF_uArm uarm;           // initialize the uArm library 
 
 
-
-
-
-/* Estimated gripper sate */
-int targetGripperState = CATCH;
-
 /* Initial PID Parameters */
 const int INIT_KP = 1;
 const int INIT_KD = 0;
@@ -76,7 +70,8 @@ int testSequence[][5] =
   {70, -85, 0, 0, CATCH},  // release
   {70, 80, 0, 0, RELEASE},     // up
   {0, 80, 0, 0, RELEASE}}     ;  // original position;
-int testState=0;
+int testState=0;  // current command from test sequence
+int test = 0;    //is the test enabled
 
 /* Variable initialization */
 // A pair of varibles to help parse serial commands (thanks Fergs)
@@ -97,7 +92,6 @@ char argv2[16];
 long arg1;
 long arg2;
 
-int test = 0;
 
 
 /* Clear the current command parameters */
@@ -176,6 +170,17 @@ int runCommand() {
     Serial.print(uarm.getPosition(3));
     Serial.print(" ");
     Serial.println(uarm.getPosition(4));
+    break;
+  case ARM_GET_ANGLE:
+    Serial.print(uarm.readAngle(SERVO_ROT));
+    Serial.print(" ");
+    Serial.print(uarm.readAngle(SERVO_L));
+    Serial.print(" ");
+    Serial.print(uarm.readAngle(SERVO_R));
+    Serial.print(" ");
+    Serial.print(uarm.readAngle(SERVO_HAND_ROT));
+    Serial.print(" ");
+    Serial.println(uarm.readAngle(SERVO_HAND));
     break;
   default:
     Serial.println("Invalid Command");
