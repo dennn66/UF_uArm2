@@ -79,13 +79,6 @@
 #define PID_SERVO_HAND_ROT      3    //
 #define PID_SERVO_HAND          4     //
 
-#define JOINT_BASE_BODY             0    //
-#define JOINT_BODY_UPPER_ARM        1    //
-#define JOINT_UPPER_ARM_FOREARM     2    //
-#define JOINT_FOREARM_WRIST         3    //
-#define JOINT_WRIST_PALM            4     //
-#define JOINT_PALM_RIGHT_FINGER     5     //
-#define JOINT_PALM_LEFT_FINGER      6     //
 
 class UF_uArm
 {
