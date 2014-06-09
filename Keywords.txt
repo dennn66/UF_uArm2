@@ -17,23 +17,24 @@ calibration	KEYWORD2
 manual_calibration	KEYWORD2
 readAngle	KEYWORD2
 setPosition	KEYWORD2
+getPosition	KEYWORD2
 gripperCatch	KEYWORD2
 gripperRelease	KEYWORD2
 gripperDetach	KEYWORD2
-
 gripperDirectDetach	KEYWORD2
-
 pumpOn		KEYWORD2
-
 pumpOff		KEYWORD2
-
 valveOn		KEYWORD2
-
 valveOff	KEYWORD2
-
 detachServo	KEYWORD2
 sendData	KEYWORD2
 alert		KEYWORD2
+resetPID	KEYWORD2	
+doPID		KEYWORD2
+updatePID	KEYWORD2
+setPIDParams	KEYWORD2
+getPositionMicroseconds	KEYWORD2
+isMoving	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
@@ -76,3 +77,10 @@ SERVO_HAND_ROT          LITERAL1
 SERVO_ROT               LITERAL1
 SERVO_R                 LITERAL1
 SERVO_L                 LITERAL1
+PID_SERVO_R             LITERAL1
+PID_SERVO_L             LITERAL1
+PID_SERVO_ROT           LITERAL1
+PID_SERVO_HAND_ROT      LITERAL1
+PID_SERVO_HAND          LITERAL1
+
+
